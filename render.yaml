@@ -51,8 +51,8 @@ services:
     name: contacts-redis
     plan: free
     region: frankfurt
+    ipAllowList: [] # Fixes the missing property diagnostic warning
     maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
 
 databases:
   # 3. PostgreSQL Database Service
@@ -60,4 +60,4 @@ databases:
     plan: free
     region: frankfurt
     databaseName: contacts_db
-    user: contacts_user
+    user: postgres
