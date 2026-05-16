@@ -36,15 +36,9 @@ async def send_verification_email(email: str, username: str, host: str):
         )
 
         fm = FastMail(conf)
-        print(f"DEBUG: Attempting to send email to {email} via server {os.getenv('MAIL_SERVER')}...", flush=True)
         await fm.send_message(message)
-        print("DEBUG: Email sent successfully!", flush=True)
-        
     except ConnectionErrors as e:
-        print(f"CRITICAL: Email connection error: {e}", flush=True)
-    except Exception as e:
-        # 🌟 ГОЛОВНЕ ВИПРАВЛЕННЯ: ловимо абсолютно всі помилки і примусово виводимо в логи
-        print(f"CRITICAL: Unexpected email error type {type(e)}: {e}", flush=True)
+        print(f"Email connection error: {e}")
 
 async def send_reset_password_email(email: str, username: str, host: str):
     """
