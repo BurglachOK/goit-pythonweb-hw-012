@@ -1,7 +1,6 @@
 from faker import Faker
 from fastapi import FastAPI, Depends, HTTPException, status, Query, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import List
 from jose import JWTError, jwt
@@ -287,7 +286,5 @@ async def update_avatar(
     return {"avatar_url": avatar_url}
 
 @app.get("/")
-@app.get("")
 def read_root():
-    print({"message": "Welcome to the Premium Contacts API! Made by Serhii Buriak."})
-    return RedirectResponse(url="/docs")
+    return {"message": "Welcome to the Premium Contacts API! Made by Serhii Buriak."}
