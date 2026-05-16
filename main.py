@@ -73,12 +73,7 @@ app.add_middleware(
 async def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
-        if not db_user.confirmed:
-            print(f"DEBUG: Removing unverified user {user.email} to allow re-registration.", flush=True)
-            db.delete(db_user)
-            db.commit()
-        else:
-            raise HTTPException(status_code=409, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="Email already registered")
     
     assigned_role = "user"
     if user.admin_token and user.admin_token.strip() and user.admin_token != "string":
