@@ -2,6 +2,7 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
+
 class ContactBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=50, examples=["John"])
     last_name: str = Field(..., min_length=1, max_length=50, examples=["Doe"])
@@ -31,7 +32,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(min_length=6, max_length=100)
-
+    admin_token: Optional[str] = Field(None, description="Secret token for admin registration")
+    
 class UserResponse(UserBase):
     id: int
     avatar: Optional[str]

@@ -39,3 +39,25 @@ async def send_verification_email(email: str, username: str, host: str):
         await fm.send_message(message)
     except ConnectionErrors as e:
         print(f"Email connection error: {e}")
+
+async def send_reset_password_email(email: str, username: str, host: str):
+    """
+    Генерує токен та відправляє email для скидання пароля.
+    """
+    try:
+        token_data = {"sub": email, "action": "reset_password"}
+        token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+        base_host = host.rstrip('/')
+        reset_url = f"{base_host}/auth/reset-password/{token}"
+        
+        message = MessageSchema(
+            subject="Password Reset Request",
+            recipients=[email],
+            body=f"Hello {username},<br>You requested a password reset. Click the link to set a new password: <a href='{reset_url}'>Reset Password</a>",
+            subtype=MessageType.html
+        )
+
+        fm = FastMail(conf)
+        await fm.send_message(message)
+    except ConnectionErrors as e:
+        print(f"Email connection error: {e}")

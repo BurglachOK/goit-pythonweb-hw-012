@@ -26,6 +26,9 @@ from services.email import send_verification_email
 from fastapi.security import OAuth2PasswordRequestForm
 load_dotenv()
 import os
+from schemas import RequestEmail, ResetPassword
+from auth import RoleChecker, redis_client
+from services.email import send_reset_password_email
 
 limiter = Limiter(key_func=get_remote_address)
 fake = Faker()
@@ -61,8 +64,26 @@ async def register(user: UserCreate, request: Request, db: Session = Depends(get
     if db_user:
         raise HTTPException(status_code=409, detail="Email already registered")
     
+    assigned_role = "user"
+    if user.admin_token and user.admin_token.strip() and user.admin_token != "string":
+        expected_token = os.getenv("ADMIN_REGISTRATION_TOKEN")
+        if user.admin_token == expected_token:
+            assigned_role = "admin"
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Invalid admin registration token"
+            )
+            
     hashed_password = auth.get_password_hash(user.password)
-    new_user = models.User(email=user.email, username=user.username, password=hashed_password)
+    
+
+    new_user = models.User(
+        email=user.email, 
+        username=user.username, 
+        password=hashed_password, 
+        role=assigned_role
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -102,6 +123,37 @@ async def confirm_email(token: str, db: Session = Depends(get_db)):
     except JWTError:
         raise HTTPException(status_code=400, detail="Token is invalid or expired")
 
+
+@app.post("/auth/request-password-reset", tags=["Auth"])
+async def request_password_reset(body: RequestEmail, request: Request, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == body.email).first()
+    if not user:
+        return {"message": "If the email exists, a reset link has been sent."}
+    
+    base_url = str(request.base_url)
+    await send_reset_password_email(user.email, user.username, base_url)
+    return {"message": "Password reset link sent to your email."}
+
+@app.post("/auth/reset-password", tags=["Auth"])
+async def reset_password(body: ResetPassword, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(body.token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("action") != "reset_password":
+            raise HTTPException(status_code=400, detail="Invalid token action")
+        email = payload.get("sub")
+        
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user.password = auth.get_password_hash(body.new_password)
+        db.commit()
+        redis_client.delete(f"user:{email}")
+        
+        return {"message": "Password reset successfully."}
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Token is invalid or expired")
+    
 # --- Contacts endpoints ---
 
 @app.post("/contacts/seed", status_code=status.HTTP_201_CREATED)
@@ -214,13 +266,16 @@ async def read_users_me(
 @app.patch("/users/avatar", tags=["Users"])
 async def update_avatar(
     file: UploadFile = File(...), 
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(RoleChecker(["admin"])),
     db: Session = Depends(get_db)
 ):
     r = cloudinary.uploader.upload(file.file, public_id=f"avatars/{current_user.email}", overwrite=True)
     avatar_url = r.get("secure_url")
     current_user.avatar = avatar_url
     db.commit()
+    
+    redis_client.delete(f"user:{current_user.email}")
+    
     return {"avatar_url": avatar_url}
 
 @app.get("/")
