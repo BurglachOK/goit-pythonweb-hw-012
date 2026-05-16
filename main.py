@@ -30,9 +30,17 @@ import os
 from schemas import RequestEmail, ResetPassword
 from auth import RoleChecker, redis_client
 from services.email import send_reset_password_email
-
+from alembic.config import Config, command
 limiter = Limiter(key_func=get_remote_address)
 fake = Faker()
+
+try:
+    print("Running Alembic database migrations...")
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    print("Migrations applied successfully!")
+except Exception as e:
+    print(f"Alembic migration failed or tables already exist: {e}")
 
 app = FastAPI(
     title="Premium Contacts API",
