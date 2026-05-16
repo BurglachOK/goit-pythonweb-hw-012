@@ -6,6 +6,7 @@ services:
     repo: https://github.com/BurglachOK/goit-pythonweb-hw-012
     plan: free
     region: frankfurt
+    startCommand: alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -61,3 +62,4 @@ databases:
     region: frankfurt
     databaseName: contacts_db
     user: contacts_user
+
