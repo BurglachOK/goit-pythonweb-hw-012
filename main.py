@@ -36,6 +36,8 @@ fake = Faker()
 app = FastAPI(
     title="Premium Contacts API",
     description="A professional API for managing personal and business contacts",
+    docs_url="/docs",
+    redoc_url="/redoc",
     version="1.1.0"
 )
 
