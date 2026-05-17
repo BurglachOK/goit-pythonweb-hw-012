@@ -9,7 +9,7 @@
 project = 'Hw12'
 copyright = '2026, Buriak Serhii'
 author = 'Buriak Serhii'
-release = 'Docs'
+release = '1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -18,9 +18,10 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',  # Дозволяє красиво рендерити Google/NumPy-style docstrings
-    'sphinx.ext.viewcode',  # Додасть посилання на вихідний код у документації
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
 ]
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 

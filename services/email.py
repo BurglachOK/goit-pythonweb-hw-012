@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from jose import jwt
-from auth import SECRET_KEY, ALGORITHM
+from auth import SECRET_KEY, ALGORITHM, create_reset_password_token
 
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
@@ -12,15 +12,23 @@ conf = ConnectionConfig(
     MAIL_PORT=int(os.getenv("MAIL_PORT", 465)),
     MAIL_SERVER=os.getenv("MAIL_SERVER"),
     MAIL_FROM_NAME="Contacts Management System",
-    MAIL_STARTTLS=False,
-    MAIL_SSL_TLS=True,
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True,
 )
 
 async def send_verification_email(email: str, username: str, host: str):
     """
-    Generates a token and sends a verification email.
+    Generates a unique verification token and dispatches a confirmation email to the user.
+
+    :param email: The recipient's email address.
+    :type email: str
+    :param username: The username used for personalizing the email greeting.
+    :type username: str
+    :param host: The base URL of the application host used to build the verification link.
+    :type host: str
+    :return: None
     """
     try:
         token_data = {"sub": email}
@@ -42,18 +50,18 @@ async def send_verification_email(email: str, username: str, host: str):
 
 async def send_reset_password_email(email: str, username: str, host: str):
     """
-    Генерує токен та відправляє email для скидання пароля.
+    Generates a token with a 15-minute lifespan and sends a password reset email.
     """
     try:
-        token_data = {"sub": email, "action": "reset_password"}
-        token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+        token = create_reset_password_token(email)
+        
         base_host = host.rstrip('/')
-        reset_url = f"{base_host}/auth/reset-password/{token}"
+        reset_url = f"{base_host}/auth/reset-password?token={token}"
         
         message = MessageSchema(
             subject="Password Reset Request",
             recipients=[email],
-            body=f"Hello {username},<br>You requested a password reset. Click the link to set a new password: <a href='{reset_url}'>Reset Password</a>",
+            body=f"Hello {username},<br>You requested a password reset. Click the link to set a new password: <a href='{reset_url}'>Reset Password</a><br>This link is valid for 15 minutes.",
             subtype=MessageType.html
         )
 

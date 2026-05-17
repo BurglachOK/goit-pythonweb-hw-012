@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>main &mdash; Hw12 Docs documentation</title>
+  <title>main &mdash; Hw12 1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -12,7 +12,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=bb004f42"></script>
+        <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,9 +94,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.security</span><span class="w"> </span><span class="kn">import</span> <span class="n">OAuth2PasswordRequestForm</span>
 <span class="n">load_dotenv</span><span class="p">()</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">schemas</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestEmail</span><span class="p">,</span> <span class="n">ResetPassword</span>  <span class="c1"># Додаємо нові схеми</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">RoleChecker</span><span class="p">,</span> <span class="n">redis_client</span>       <span class="c1"># Додаємо нові інструменти захисту та ролей</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">services.email</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_reset_password_email</span> <span class="c1"># Імпорт сервісу скидання пароля</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">schemas</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestEmail</span><span class="p">,</span> <span class="n">ResetPassword</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">RoleChecker</span><span class="p">,</span> <span class="n">redis_client</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">services.email</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_reset_password_email</span>
 
 <span class="n">limiter</span> <span class="o">=</span> <span class="n">Limiter</span><span class="p">(</span><span class="n">key_func</span><span class="o">=</span><span class="n">get_remote_address</span><span class="p">)</span>
 <span class="n">fake</span> <span class="o">=</span> <span class="n">Faker</span><span class="p">()</span>
@@ -104,6 +104,8 @@
 <span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Premium Contacts API&quot;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A professional API for managing personal and business contacts&quot;</span><span class="p">,</span>
+    <span class="n">docs_url</span><span class="o">=</span><span class="s2">&quot;/docs&quot;</span><span class="p">,</span>
+    <span class="n">redoc_url</span><span class="o">=</span><span class="s2">&quot;/redoc&quot;</span><span class="p">,</span>
     <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.1.0&quot;</span>
 <span class="p">)</span>
 
@@ -130,11 +132,26 @@
 <a class="viewcode-back" href="../index.html#main.register">[docs]</a>
 <span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/register&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">UserResponse</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_201_CREATED</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auth&quot;</span><span class="p">])</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">UserCreate</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a new user in the system, validates unique constraints, and sends a confirmation email.</span>
+
+<span class="sd">    :param body: The user registration data schema including username, email, and password.</span>
+<span class="sd">    :type body: UserCreate</span>
+<span class="sd">    :param db: The database session dependency instance.</span>
+<span class="sd">    :type db: Session</span>
+<span class="sd">    :raises HTTPException 409: If a user with the provided email already exists.</span>
+<span class="sd">    :return: The newly created user record object matching the response schema.</span>
+<span class="sd">    :rtype: models.User</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">db_user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">db_user</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">409</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Email already registered&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">db_user</span><span class="o">.</span><span class="n">confirmed</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEBUG: Removing unverified user </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="si">}</span><span class="s2"> to allow re-registration.&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">db_user</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">409</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Email already registered&quot;</span><span class="p">)</span>
     
-    <span class="c1"># 1. Визначаємо роль на основі секретного токена</span>
     <span class="n">assigned_role</span> <span class="o">=</span> <span class="s2">&quot;user&quot;</span>
     <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">admin_token</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">admin_token</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">admin_token</span> <span class="o">!=</span> <span class="s2">&quot;string&quot;</span><span class="p">:</span>
         <span class="n">expected_token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;ADMIN_REGISTRATION_TOKEN&quot;</span><span class="p">)</span>
@@ -148,7 +165,7 @@
             
     <span class="n">hashed_password</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">get_password_hash</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
     
-    <span class="c1"># 2. Передаємо динамічну роль при створенні моделі</span>
+
     <span class="n">new_user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">(</span>
         <span class="n">email</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> 
         <span class="n">username</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> 
@@ -167,17 +184,37 @@
 
 <div class="viewcode-block" id="login">
 <a class="viewcode-back" href="../index.html#main.login">[docs]</a>
-<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/login&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">Token</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auth&quot;</span><span class="p">])</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">login</span><span class="p">(</span><span class="n">form_data</span><span class="p">:</span> <span class="n">OAuth2PasswordRequestForm</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(),</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">form_data</span><span class="o">.</span><span class="n">username</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">auth</span><span class="o">.</span><span class="n">verify_password</span><span class="p">(</span><span class="n">form_data</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">password</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid email or password&quot;</span><span class="p">)</span>
-    
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/login&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auth&quot;</span><span class="p">])</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">login</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">OAuth2PasswordRequestForm</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(),</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Authenticates a user using their credentials, verifies email confirmation, and returns JWT tokens.</span>
+
+<span class="sd">    :param body: The standard OAuth2 password request form containing username (email) and password.</span>
+<span class="sd">    :type body: OAuth2PasswordRequestForm</span>
+<span class="sd">    :param db: The database session dependency instance.</span>
+<span class="sd">    :type db: Session</span>
+<span class="sd">    :raises HTTPException 401: If credentials are invalid or if the email is not confirmed yet.</span>
+<span class="sd">    :return: A dictionary containing the access token, refresh token, and token type.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">body</span><span class="o">.</span><span class="n">username</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid email&quot;</span><span class="p">)</span>
+        
     <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">confirmed</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">403</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Email not confirmed&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Email not confirmed&quot;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">auth</span><span class="o">.</span><span class="n">verify_password</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">password</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid password&quot;</span><span class="p">)</span>
     
     <span class="n">access_token</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">})</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">,</span> <span class="s2">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bearer&quot;</span><span class="p">}</span></div>
+    <span class="n">refresh_token</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">create_refresh_token</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">})</span>
+    
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">,</span> 
+        <span class="s2">&quot;refresh_token&quot;</span><span class="p">:</span> <span class="n">refresh_token</span><span class="p">,</span> 
+        <span class="s2">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bearer&quot;</span>
+    <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="confirm_email">
@@ -208,7 +245,6 @@
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">request_password_reset</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">RequestEmail</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">body</span><span class="o">.</span><span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
-        <span class="c1"># Безпека: не кажемо зловмиснику чи існує такий email</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;If the email exists, a reset link has been sent.&quot;</span><span class="p">}</span>
     
     <span class="n">base_url</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">base_url</span><span class="p">)</span>
@@ -216,31 +252,81 @@
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Password reset link sent to your email.&quot;</span><span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="reset_password">
-<a class="viewcode-back" href="../index.html#main.reset_password">[docs]</a>
-<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/reset-password&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auth&quot;</span><span class="p">])</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset_password</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">ResetPassword</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<div class="viewcode-block" id="reset_password_confirm">
+<a class="viewcode-back" href="../index.html#main.reset_password_confirm">[docs]</a>
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/reset-password&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Authentication&quot;</span><span class="p">])</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset_password_confirm</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">ResetPassword</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">token</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="n">ALGORITHM</span><span class="p">])</span>
+        
         <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;reset_password&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid token action&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+                <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> 
+                <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid token action&quot;</span>
+            <span class="p">)</span>
+            
         <span class="n">email</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sub&quot;</span><span class="p">)</span>
-        
-        <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
-        
-        <span class="n">user</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">get_password_hash</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">new_password</span><span class="p">)</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-        
-        <span class="c1"># Скидаємо кеш користувача в Redis, щоб оновити дані сесії</span>
-        <span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;user:</span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Password reset successfully.&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">email</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+                <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> 
+                <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid token payload&quot;</span>
+            <span class="p">)</span>
+            
     <span class="k">except</span> <span class="n">JWTError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Token is invalid or expired&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> 
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Token is invalid or expired&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+
+    <span class="n">user</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">get_password_hash</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">new_password</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+    <span class="n">redis_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;user:</span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">auth</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">redis_key</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Password has been successfully reset&quot;</span><span class="p">}</span></div>
 
     
+<div class="viewcode-block" id="refresh_token_endpoint">
+<a class="viewcode-back" href="../index.html#main.refresh_token_endpoint">[docs]</a>
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/auth/refresh&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auth&quot;</span><span class="p">])</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">refresh_token_endpoint</span><span class="p">(</span><span class="n">refresh_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decodes the refresh token, verifies its scope, and issues a brand new access/refresh token pair.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">refresh_token</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="n">ALGORITHM</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scope&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;refresh_token&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid token scope&quot;</span><span class="p">)</span>
+            
+        <span class="n">email</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sub&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">email</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid token payload&quot;</span><span class="p">)</span>
+            
+    <span class="k">except</span> <span class="n">JWTError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Refresh token is invalid or expired&quot;</span><span class="p">)</span>
+        
+    <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+        
+    <span class="n">new_access_token</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">})</span>
+    <span class="n">new_refresh_token</span> <span class="o">=</span> <span class="n">auth</span><span class="o">.</span><span class="n">create_refresh_token</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">})</span>
+    
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">new_access_token</span><span class="p">,</span>
+        <span class="s2">&quot;refresh_token&quot;</span><span class="p">:</span> <span class="n">new_refresh_token</span><span class="p">,</span>
+        <span class="s2">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bearer&quot;</span>
+    <span class="p">}</span></div>
+
+
 <span class="c1"># --- Contacts endpoints ---</span>
 
 <div class="viewcode-block" id="seed_contacts">
@@ -371,9 +457,20 @@
 <span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users/me&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Users&quot;</span><span class="p">])</span>
 <span class="nd">@limiter</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="s2">&quot;5/minute&quot;</span><span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_users_me</span><span class="p">(</span>
+    
     <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> 
     <span class="n">current_user</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">)</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves the profile data of the currently authenticated user. Rate-limited to 5 requests per minute.</span>
+
+<span class="sd">    :param request: The incoming HTTP request instance required by the rate limiter.</span>
+<span class="sd">    :type request: Request</span>
+<span class="sd">    :param current_user: The authenticated user model injected via dependency injection.</span>
+<span class="sd">    :type current_user: models.User</span>
+<span class="sd">    :return: The current user database model object.</span>
+<span class="sd">    :rtype: models.User</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">current_user</span></div>
 
 
@@ -382,7 +479,7 @@
 <span class="nd">@app</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;/users/avatar&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Users&quot;</span><span class="p">])</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">update_avatar</span><span class="p">(</span>
     <span class="n">file</span><span class="p">:</span> <span class="n">UploadFile</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> 
-    <span class="n">current_user</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">RoleChecker</span><span class="p">([</span><span class="s2">&quot;admin&quot;</span><span class="p">])),</span> <span class="c1"># Тільки адміни</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">RoleChecker</span><span class="p">([</span><span class="s2">&quot;admin&quot;</span><span class="p">])),</span>
     <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)</span>
 <span class="p">):</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">cloudinary</span><span class="o">.</span><span class="n">uploader</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="n">public_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;avatars/</span><span class="si">{</span><span class="n">current_user</span><span class="o">.</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>

@@ -62,6 +62,17 @@ app.add_middleware(
 
 @app.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["Auth"])
 async def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
+    """
+    Registers a new user in the system, validates unique constraints, and sends a confirmation email.
+
+    :param body: The user registration data schema including username, email, and password.
+    :type body: UserCreate
+    :param db: The database session dependency instance.
+    :type db: Session
+    :raises HTTPException 409: If a user with the provided email already exists.
+    :return: The newly created user record object matching the response schema.
+    :rtype: models.User
+    """
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         if not db_user.confirmed:
@@ -100,17 +111,37 @@ async def register(user: UserCreate, request: Request, db: Session = Depends(get
     
     return new_user
 
-@app.post("/auth/login", response_model=Token, tags=["Auth"])
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
+@app.post("/auth/login", tags=["Auth"])
+async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """
+    Authenticates a user using their credentials, verifies email confirmation, and returns JWT tokens.
+
+    :param body: The standard OAuth2 password request form containing username (email) and password.
+    :type body: OAuth2PasswordRequestForm
+    :param db: The database session dependency instance.
+    :type db: Session
+    :raises HTTPException 401: If credentials are invalid or if the email is not confirmed yet.
+    :return: A dictionary containing the access token, refresh token, and token type.
+    :rtype: dict
+    """
+    user = db.query(models.User).filter(models.User.email == body.username).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
+        
     if not user.confirmed:
-        raise HTTPException(status_code=403, detail="Email not confirmed")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not confirmed")
+        
+    if not auth.verify_password(body.password, user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
     
     access_token = auth.create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = auth.create_refresh_token(data={"sub": user.email})
+    
+    return {
+        "access_token": access_token, 
+        "refresh_token": refresh_token, 
+        "token_type": "bearer"
+    }
 
 @app.get("/auth/confirm/{token}", tags=["Auth"])
 async def confirm_email(token: str, db: Session = Depends(get_db)):
@@ -142,25 +173,74 @@ async def request_password_reset(body: RequestEmail, request: Request, db: Sessi
     return {"message": "Password reset link sent to your email."}
 
 @app.post("/auth/reset-password", tags=["Auth"])
-async def reset_password(body: ResetPassword, db: Session = Depends(get_db)):
+async def reset_password_confirm(body: ResetPassword, db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(body.token, SECRET_KEY, algorithms=[ALGORITHM])
+        
         if payload.get("action") != "reset_password":
-            raise HTTPException(status_code=400, detail="Invalid token action")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Invalid token action"
+            )
+            
         email = payload.get("sub")
-        
-        user = db.query(models.User).filter(models.User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        user.password = auth.get_password_hash(body.new_password)
-        db.commit()
-        redis_client.delete(f"user:{email}")
-        
-        return {"message": "Password reset successfully."}
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Invalid token payload"
+            )
+            
     except JWTError:
-        raise HTTPException(status_code=400, detail="Token is invalid or expired")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Token is invalid or expired"
+        )
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password = auth.get_password_hash(body.new_password)
+    db.commit()
+
+    redis_key = f"user:{email}"
+    try:
+        auth.redis_client.delete(redis_key)
+    except Exception:
+        pass
+
+    return {"message": "Password has been successfully reset"}
     
+@app.post("/auth/refresh", tags=["Auth"])
+async def refresh_token_endpoint(refresh_token: str, db: Session = Depends(get_db)):
+    """
+    Decodes the refresh token, verifies its scope, and issues a brand new access/refresh token pair.
+    """
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("scope") != "refresh_token":
+            raise HTTPException(status_code=401, detail="Invalid token scope")
+            
+        email = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+            
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Refresh token is invalid or expired")
+        
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    new_access_token = auth.create_access_token(data={"sub": user.email})
+    new_refresh_token = auth.create_refresh_token(data={"sub": user.email})
+    
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }
+
 # --- Contacts endpoints ---
 
 @app.post("/contacts/seed", status_code=status.HTTP_201_CREATED)
@@ -265,9 +345,20 @@ def delete_existing_contact(
 @app.get("/users/me", tags=["Users"])
 @limiter.limit("5/minute")
 async def read_users_me(
+    
     request: Request, 
     current_user: models.User = Depends(get_current_user)
 ):
+    """
+    Retrieves the profile data of the currently authenticated user. Rate-limited to 5 requests per minute.
+
+    :param request: The incoming HTTP request instance required by the rate limiter.
+    :type request: Request
+    :param current_user: The authenticated user model injected via dependency injection.
+    :type current_user: models.User
+    :return: The current user database model object.
+    :rtype: models.User
+    """
     return current_user
 
 @app.patch("/users/avatar", tags=["Users"])

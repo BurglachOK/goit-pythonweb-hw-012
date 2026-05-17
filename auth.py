@@ -25,12 +25,38 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def verify_password(plain_password, hashed_password):
+    """
+    Verifies if a plain text password matches its corresponding bcrypt hash.
+
+    :param plain_password: The raw password provided by the user.
+    :type plain_password: str
+    :param hashed_password: The securely stored bcrypt hash from the database.
+    :type hashed_password: str
+    :return: True if the password matches the hash, False otherwise.
+    :rtype: bool
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
+    """
+    Generates a secure bcrypt hash from a plain text password string.
+
+    :param password: The plain text password to encrypt.
+    :type password: str
+    :return: The generated cryptographic bcrypt hash.
+    :rtype: str
+    """
     return pwd_context.hash(password)
 
 def create_access_token(data: dict):
+    """
+    Generates a short-lived JWT access token valid for the configured minutes.
+
+    :param data: Dictionary containing user-specific identifiers to encode.
+    :type data: dict
+    :return: Cryptographically signed JWT access token string.
+    :rtype: str
+    """
     to_encode = data.copy()
     expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=expire_minutes)
@@ -38,6 +64,17 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """
+    Decodes the provided JWT token, checks its validity, and retrieves the corresponding user from DB or Redis cache.
+
+    :param token: The JWT access token extracted from the Authorization header.
+    :type token: str
+    :param db: The database session dependency instance.
+    :type db: Session
+    :raises HTTPException 401: If the token is invalid, expired, or payload parsing fails.
+    :return: The authenticated user database object.
+    :rtype: models.User
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
         detail="Could not validate credentials"
@@ -91,3 +128,29 @@ class RoleChecker:
             )
         return current_user
     
+
+def create_reset_password_token(email: str) -> str:
+    """
+    Generates a temporary JWT token for password reset, valid for 15 minutes.
+    """
+    to_encode = {"sub": email, "action": "reset_password"}
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    expire_naive = expire.replace(tzinfo=None)
+    
+    to_encode.update({"exp": expire_naive})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def create_refresh_token(data: dict):
+    """
+    Generates a long-lived JWT refresh token valid for 7 days.
+
+    :param data: Dictionary containing the data payload to encode.
+    :type data: dict
+    :return: Encoded cryptographic JWT refresh token string.
+    :rtype: str
+    """
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=7)
+    to_encode.update({"exp": expire, "scope": "refresh_token"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

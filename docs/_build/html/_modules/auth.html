@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>auth &mdash; Hw12 Docs documentation</title>
+  <title>auth &mdash; Hw12 1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -12,7 +12,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=bb004f42"></script>
+        <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -86,7 +86,7 @@
 <span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;REDIS_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">)</span>
 <span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;REDIS_PORT&quot;</span><span class="p">,</span> <span class="mi">6379</span><span class="p">))</span>
 
-<span class="c1"># Ініціалізація клієнта Redis</span>
+
 <span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">REDIS_HOST</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">REDIS_PORT</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">pwd_context</span> <span class="o">=</span> <span class="n">CryptContext</span><span class="p">(</span><span class="n">schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bcrypt&quot;</span><span class="p">],</span> <span class="n">deprecated</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
@@ -95,18 +95,44 @@
 <div class="viewcode-block" id="verify_password">
 <a class="viewcode-back" href="../index.html#auth.verify_password">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">verify_password</span><span class="p">(</span><span class="n">plain_password</span><span class="p">,</span> <span class="n">hashed_password</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verifies if a plain text password matches its corresponding bcrypt hash.</span>
+
+<span class="sd">    :param plain_password: The raw password provided by the user.</span>
+<span class="sd">    :type plain_password: str</span>
+<span class="sd">    :param hashed_password: The securely stored bcrypt hash from the database.</span>
+<span class="sd">    :type hashed_password: str</span>
+<span class="sd">    :return: True if the password matches the hash, False otherwise.</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">pwd_context</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">plain_password</span><span class="p">,</span> <span class="n">hashed_password</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_password_hash">
 <a class="viewcode-back" href="../index.html#auth.get_password_hash">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_password_hash</span><span class="p">(</span><span class="n">password</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a secure bcrypt hash from a plain text password string.</span>
+
+<span class="sd">    :param password: The plain text password to encrypt.</span>
+<span class="sd">    :type password: str</span>
+<span class="sd">    :return: The generated cryptographic bcrypt hash.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">pwd_context</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">password</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="create_access_token">
 <a class="viewcode-back" href="../index.html#auth.create_access_token">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_access_token</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a short-lived JWT access token valid for the configured minutes.</span>
+
+<span class="sd">    :param data: Dictionary containing user-specific identifiers to encode.</span>
+<span class="sd">    :type data: dict</span>
+<span class="sd">    :return: Cryptographically signed JWT access token string.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">to_encode</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">expire_minutes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;ACCESS_TOKEN_EXPIRE_MINUTES&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
     <span class="n">expire</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">expire_minutes</span><span class="p">)</span>
@@ -117,6 +143,17 @@
 <div class="viewcode-block" id="get_current_user">
 <a class="viewcode-back" href="../index.html#auth.get_current_user">[docs]</a>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_current_user</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">oauth2_scheme</span><span class="p">),</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decodes the provided JWT token, checks its validity, and retrieves the corresponding user from DB or Redis cache.</span>
+
+<span class="sd">    :param token: The JWT access token extracted from the Authorization header.</span>
+<span class="sd">    :type token: str</span>
+<span class="sd">    :param db: The database session dependency instance.</span>
+<span class="sd">    :type db: Session</span>
+<span class="sd">    :raises HTTPException 401: If the token is invalid, expired, or payload parsing fails.</span>
+<span class="sd">    :return: The authenticated user database object.</span>
+<span class="sd">    :rtype: models.User</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">credentials_exception</span> <span class="o">=</span> <span class="n">HTTPException</span><span class="p">(</span>
         <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> 
         <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Could not validate credentials&quot;</span>
@@ -128,8 +165,7 @@
             <span class="k">raise</span> <span class="n">credentials_exception</span>
     <span class="k">except</span> <span class="n">JWTError</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">credentials_exception</span>
-    
-    <span class="c1"># --- РЕАЛІЗАЦІЯ КЕШУВАННЯ З REDIS ---</span>
+
     <span class="n">redis_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;user:</span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">cached_user</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">redis_key</span><span class="p">)</span>
@@ -137,15 +173,12 @@
             <span class="n">user_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">cached_user</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">user_data</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="c1"># Безпека: якщо Redis недоступний, застосунок продовжує працювати через БД</span>
         <span class="k">pass</span>
 
-    <span class="c1"># Якщо в кеші немає — шукаємо в базі даних</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">credentials_exception</span>
 
-    <span class="c1"># Зберігаємо користувача в Redis на 5 хвилин (300 секунд)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">user_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
@@ -178,6 +211,38 @@
         <span class="k">return</span> <span class="n">current_user</span></div>
 
     
+
+<div class="viewcode-block" id="create_reset_password_token">
+<a class="viewcode-back" href="../index.html#auth.create_reset_password_token">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_reset_password_token</span><span class="p">(</span><span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a temporary JWT token for password reset, valid for 15 minutes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">to_encode</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;reset_password&quot;</span><span class="p">}</span>
+    <span class="n">expire</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="n">expire_naive</span> <span class="o">=</span> <span class="n">expire</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    
+    <span class="n">to_encode</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="n">expire_naive</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">to_encode</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">ALGORITHM</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_refresh_token">
+<a class="viewcode-back" href="../index.html#auth.create_refresh_token">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_refresh_token</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a long-lived JWT refresh token valid for 7 days.</span>
+
+<span class="sd">    :param data: Dictionary containing the data payload to encode.</span>
+<span class="sd">    :type data: dict</span>
+<span class="sd">    :return: Encoded cryptographic JWT refresh token string.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">to_encode</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">expire</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">to_encode</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="n">expire</span><span class="p">,</span> <span class="s2">&quot;scope&quot;</span><span class="p">:</span> <span class="s2">&quot;refresh_token&quot;</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">to_encode</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">ALGORITHM</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
