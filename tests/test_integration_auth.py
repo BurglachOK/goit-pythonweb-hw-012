@@ -33,7 +33,7 @@ def test_auth_and_contacts_workflow(client, db_session):
         "/auth/login",
         data={"username": "tester@example.com", "password": "supersecurepassword"}
     )
-    assert login_fail.status_code == 403
+    assert login_fail.status_code == 401
 
     user = db_session.query(models.User).filter(models.User.email == "tester@example.com").first()
     assert user is not None

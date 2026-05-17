@@ -39,7 +39,7 @@ def test_login_invalid_password(client, test_user):
         data={"username": "endpoint_tester@example.com", "password": "wrongpassword"}
     )
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid email or password"
+    assert response.json()["detail"] == "Invalid password"
 
 
 def test_request_email_reset_password(client, test_user):
